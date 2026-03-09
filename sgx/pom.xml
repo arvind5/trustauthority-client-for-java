@@ -17,6 +17,9 @@
 	<artifactId>sgx</artifactId>
 	<version>${sgx.version}</version>
 
+	<name>Trust Authority SGX Adapter</name>
+	<description>Intel SGX adapter for Intel Trust Authority Client. Uses Intel SGX DCAP to collect evidence (quotes) from Intel SGX enclaves for attestation.</description>
+
 	<build>
 		<resources>
 			<resource>

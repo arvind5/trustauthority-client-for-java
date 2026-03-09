@@ -86,3 +86,80 @@ jobs:
               echo "Unit test coverage must be above 80%"
               exit 1
           fi
+
+  publish:
+    needs: [setup, build-test]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ${{ needs.setup.outputs.runner }}
+    permissions:
+      contents: read
+    env:
+      http_proxy: ${{ secrets.HTTP_PROXY }}
+      https_proxy: ${{ secrets.HTTPS_PROXY }}
+      no_proxy: ${{ secrets.NO_PROXY }}
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@387ac29b308b003ca37ba93a6cab5eb57c8f5f93 # v4.0.0
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Maven manually
+        run: |
+          curl -LO https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+          curl -LO https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz.sha256
+          sha256sum -c apache-maven-3.6.3-bin.tar.gz.sha256
+          tar -xzf apache-maven-3.6.3-bin.tar.gz
+
+      - name: Import GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+      - name: Configure Maven settings
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          mkdir -p ~/.m2
+          {
+            echo "<settings>"
+            echo "  <servers>"
+            echo "    <server>"
+            echo "      <id>central</id>"
+            echo "      <username>${MAVEN_CENTRAL_USERNAME}</username>"
+            echo "      <password>${MAVEN_CENTRAL_PASSWORD}</password>"
+            echo "    </server>"
+            echo "  </servers>"
+            if [ -n "${{ secrets.HTTP_PROXY }}" ]; then
+              export HTTP_PROXY_VALUE=$(echo "${{ secrets.HTTP_PROXY }}" | sed 's|^http://||;s|^https://||')
+              export MAVEN_PROXY_HOST=$(echo $HTTP_PROXY_VALUE | cut -d':' -f1)
+              export MAVEN_PROXY_PORT=$(echo $HTTP_PROXY_VALUE | cut -d':' -f2 | sed 's/\///')
+              if [ -n "${MAVEN_PROXY_HOST}" ] && [ -n "${MAVEN_PROXY_PORT}" ]; then
+                echo "  <proxies>"
+                echo "    <proxy>"
+                echo "      <id>http-proxy</id>"
+                echo "      <active>true</active>"
+                echo "      <protocol>http</protocol>"
+                echo "      <host>${MAVEN_PROXY_HOST}</host>"
+                echo "      <port>${MAVEN_PROXY_PORT}</port>"
+                echo "    </proxy>"
+                echo "  </proxies>"
+              fi
+            fi
+            echo "</settings>"
+          } > ~/.m2/settings.xml
+
+      - name: Publish to Maven Central
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          export PATH="$PWD/apache-maven-3.6.3/bin:$PATH"
+          mvn --batch-mode deploy -P release -DskipTests \
+            -Dgpg.passphrase="${GPG_PASSPHRASE}"
+

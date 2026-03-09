@@ -21,6 +21,7 @@
 	<version>${configfstsm.version}</version>
 
 	<name>Configfs-tsm</name>
+	<description>Vendor-agnostic wrapper around the Linux configfs/tsm subsystem for Intel Trust Authority Client. Provides a safe interface for generating attestation reports from TDX trust domains.</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
