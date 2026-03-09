@@ -17,6 +17,9 @@
 	<artifactId>connector</artifactId>
 	<version>${connector.version}</version>
 
+	<name>Trust Authority Connector</name>
+	<description>Core REST API client for Intel Trust Authority. Handles communication with Intel Trust Authority via REST APIs, providing nonce retrieval, attestation token request and verification, and JWK certificate downloads.</description>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>

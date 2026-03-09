@@ -19,6 +19,9 @@
 	<artifactId>tdx</artifactId>
 	<version>${tdx.version}</version>
 
+	<name>Trust Authority TDX Adapter</name>
+	<description>Intel TDX adapter for Intel Trust Authority Client. Collects quotes from Intel TDX trust domains (TDs) for attestation, handling TDREPORT generation and quote formatting.</description>
+
 	<build>
 		<resources>
 			<resource>
